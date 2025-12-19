@@ -5,7 +5,7 @@ const DEFAULT_ABI = [
   "function transferFrom(address from, address to, uint256 tokenId) external",
 ];
 
-const BITKUB_NEXT_LOGIN_URL = "https://app.bitkubnext.com/oauth/login?redirect=/";
+const BITKUB_NEXT_LOGIN_URL = "https://app.bitkubnext.com/oauth/login?redirect=/oauth/callback";
 const READONLY_RPC_URL = "https://rpc.bitkubchain.io";
 
 const state = {
@@ -143,6 +143,43 @@ const connectInjectedWallet = async (walletType) => {
   } catch (error) {
     elements.walletStatus.textContent = error.message;
     return false;
+  }
+};
+
+const parseBitkubNextState = (rawState) => {
+  if (!rawState) {
+    return null;
+  }
+  try {
+    const decoded = atob(decodeURIComponent(rawState));
+    const parsed = JSON.parse(decoded);
+    if (typeof parsed.redirect === "string") {
+      return parsed.redirect;
+    }
+  } catch (error) {
+    return null;
+  }
+  return null;
+};
+
+const handleBitkubNextCallback = async () => {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("code");
+  if (!code) {
+    return;
+  }
+
+  const redirectPath = parseBitkubNextState(params.get("state"));
+  if (redirectPath) {
+    window.history.replaceState({}, "", redirectPath);
+  } else {
+    window.history.replaceState({}, "", window.location.pathname);
+  }
+
+  elements.walletStatus.textContent = "กำลังเชื่อมต่อ Bitkub Next ผ่าน OAuth...";
+  const connected = await connectInjectedWallet("bitkub");
+  if (connected) {
+    await handleTokens();
   }
 };
 
@@ -284,3 +321,4 @@ const initProfileFromUrl = () => {
 };
 
 initProfileFromUrl();
+handleBitkubNextCallback();
