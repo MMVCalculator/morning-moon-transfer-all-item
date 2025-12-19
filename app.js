@@ -5,6 +5,8 @@ const DEFAULT_ABI = [
   "function transferFrom(address from, address to, uint256 tokenId) external",
 ];
 
+const BITKUB_NEXT_LOGIN_URL = "https://app.bitkubnext.com/oauth/login?redirect=/";
+
 const state = {
   provider: null,
   wallet: null,
@@ -201,7 +203,8 @@ elements.connectMetamask.addEventListener("click", async () => {
 });
 
 elements.connectBitkub.addEventListener("click", async () => {
-  await connectInjectedWallet("bitkub");
+  elements.walletStatus.textContent = "กำลังพาไปยัง Bitkub Next...";
+  window.location.href = BITKUB_NEXT_LOGIN_URL;
 });
 
 elements.balanceButton.addEventListener("click", handleBalance);
