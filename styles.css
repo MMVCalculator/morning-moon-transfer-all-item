@@ -43,6 +43,12 @@ body {
   font-size: 20px;
 }
 
+.helper {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
 .field {
   display: grid;
   gap: 6px;
@@ -85,6 +91,12 @@ button.primary {
 
 button.primary:hover {
   background: #16a34a;
+}
+
+.wallet-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .status,
