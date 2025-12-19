@@ -8,15 +8,15 @@ const DEFAULT_ABI = [
 const state = {
   provider: null,
   wallet: null,
+  walletAddress: null,
   contract: null,
   tokens: [],
 };
 
 const elements = {
-  rpcUrl: document.getElementById("rpcUrl"),
-  privateKey: document.getElementById("privateKey"),
   contractAddress: document.getElementById("contractAddress"),
-  connectButton: document.getElementById("connectButton"),
+  connectMetamask: document.getElementById("connectMetamask"),
+  connectBitkub: document.getElementById("connectBitkub"),
   walletStatus: document.getElementById("walletStatus"),
   balanceAddress: document.getElementById("balanceAddress"),
   balanceButton: document.getElementById("balanceButton"),
@@ -77,27 +77,61 @@ const renderTokens = () => {
   elements.tokensResult.appendChild(list);
 };
 
-const handleConnect = async () => {
-  const rpcUrl = elements.rpcUrl.value.trim();
-  const privateKey = elements.privateKey.value.trim();
-  const contractAddress = elements.contractAddress.value.trim();
-
-  if (!rpcUrl || !privateKey || !contractAddress) {
-    elements.walletStatus.textContent = "กรุณากรอกข้อมูลให้ครบ";
-    return;
+const getInjectedProvider = (walletType) => {
+  if (walletType === "metamask") {
+    if (window.ethereum && window.ethereum.isMetaMask) {
+      return window.ethereum;
+    }
+    return null;
   }
 
-  const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
-  const wallet = new ethers.Wallet(privateKey, provider);
-  const contract = new ethers.Contract(contractAddress, DEFAULT_ABI, wallet);
+  if (walletType === "bitkub") {
+    if (window.bitkub) {
+      return window.bitkub;
+    }
+    if (window.bitkubNext) {
+      return window.bitkubNext;
+    }
+    return null;
+  }
 
-  state.provider = provider;
-  state.wallet = wallet;
-  state.contract = contract;
+  return null;
+};
 
-  elements.walletStatus.textContent = `เชื่อมต่อสำเร็จ: ${wallet.address}`;
-  elements.balanceAddress.value = wallet.address;
-  elements.ownerAddress.value = wallet.address;
+const connectInjectedWallet = async (walletType) => {
+  try {
+    const contractAddress = elements.contractAddress.value.trim();
+    if (!contractAddress) {
+      elements.walletStatus.textContent = "กรุณากรอก Contract Address";
+      return;
+    }
+
+    const injectedProvider = getInjectedProvider(walletType);
+    if (!injectedProvider) {
+      elements.walletStatus.textContent =
+        walletType === "metamask"
+          ? "ไม่พบ MetaMask ในเบราว์เซอร์"
+          : "ไม่พบ Bitkub Next ในเบราว์เซอร์";
+      return;
+    }
+
+    const provider = new ethers.providers.Web3Provider(injectedProvider, "any");
+    await provider.send("eth_requestAccounts", []);
+    const signer = provider.getSigner();
+    const walletAddress = await signer.getAddress();
+    const contract = new ethers.Contract(contractAddress, DEFAULT_ABI, signer);
+
+    state.provider = provider;
+    state.wallet = signer;
+    state.walletAddress = walletAddress;
+    state.contract = contract;
+
+    elements.walletStatus.textContent = `เชื่อมต่อสำเร็จ: ${walletAddress}`;
+    elements.balanceAddress.value = walletAddress;
+    elements.ownerAddress.value = walletAddress;
+  } catch (error) {
+    elements.walletStatus.textContent = error.message;
+  }
 };
 
 const handleBalance = async () => {
@@ -133,7 +167,7 @@ const transferSingleToken = async (tokenId) => {
       return;
     }
     logMessage(elements.transferLog, `กำลังส่ง Token ID: ${tokenId}`, "info");
-    const trx = await state.contract.transferFrom(state.wallet.address, toAddress, tokenId);
+    const trx = await state.contract.transferFrom(state.walletAddress, toAddress, tokenId);
     logMessage(elements.transferLog, `Transaction hash: ${trx.hash}`, "info");
     await trx.wait();
     logMessage(elements.transferLog, `ยืนยันเรียบร้อย Token ID: ${tokenId}`, "success");
@@ -162,7 +196,17 @@ const transferAllTokens = async () => {
   }
 };
 
-elements.connectButton.addEventListener("click", handleConnect);
+elements.connectMetamask.addEventListener("click", async () => {
+  await connectInjectedWallet("metamask");
+});
+
+elements.connectBitkub.addEventListener("click", async () => {
+  await connectInjectedWallet("bitkub");
+});
+
 elements.balanceButton.addEventListener("click", handleBalance);
+
 elements.tokensButton.addEventListener("click", handleTokens);
+
+
 elements.transferAllButton.addEventListener("click", transferAllTokens);
