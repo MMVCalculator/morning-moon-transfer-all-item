@@ -6,6 +6,7 @@ const DEFAULT_ABI = [
 ];
 
 const BITKUB_NEXT_LOGIN_URL = "https://app.bitkubnext.com/oauth/login?redirect=/";
+const READONLY_RPC_URL = "https://rpc.bitkubchain.io";
 
 const state = {
   provider: null,
@@ -13,6 +14,7 @@ const state = {
   walletAddress: null,
   contract: null,
   tokens: [],
+  profileAddress: null,
 };
 
 const elements = {
@@ -43,9 +45,15 @@ const resetTokens = () => {
   elements.tokensResult.innerHTML = "";
 };
 
-const ensureConnected = () => {
-  if (!state.contract || !state.wallet) {
-    throw new Error("กรุณาเชื่อมต่อ Wallet ก่อน");
+const ensureContract = () => {
+  if (!state.contract) {
+    throw new Error("กรุณาเชื่อมต่อ Wallet หรือเปิดโหมดดูข้อมูลก่อน");
+  }
+};
+
+const ensureSigner = () => {
+  if (!state.wallet) {
+    throw new Error("กรุณาเชื่อมต่อ Wallet ก่อนทำรายการโอน");
   }
 };
 
@@ -140,8 +148,12 @@ const connectInjectedWallet = async (walletType) => {
 
 const handleBalance = async () => {
   try {
-    ensureConnected();
+    ensureContract();
     const address = elements.balanceAddress.value.trim();
+    if (!address) {
+      elements.balanceResult.textContent = "กรุณากรอกที่อยู่ Wallet";
+      return;
+    }
     const balance = await state.contract.balanceOf(address);
     elements.balanceResult.textContent = `Balance: ${balance.toString()}`;
   } catch (error) {
@@ -151,8 +163,12 @@ const handleBalance = async () => {
 
 const handleTokens = async () => {
   try {
-    ensureConnected();
+    ensureContract();
     const address = elements.ownerAddress.value.trim();
+    if (!address) {
+      elements.tokensResult.textContent = "กรุณากรอกที่อยู่ Owner";
+      return;
+    }
     resetTokens();
     const tokens = await state.contract.tokenOfOwnerAll(address);
     state.tokens = tokens.map((token) => token.toString());
@@ -164,7 +180,7 @@ const handleTokens = async () => {
 
 const transferSingleToken = async (tokenId) => {
   try {
-    ensureConnected();
+    ensureSigner();
     const toAddress = elements.transferTo.value.trim();
     if (!toAddress) {
       logMessage(elements.transferLog, "กรุณากรอกที่อยู่ปลายทาง", "error");
@@ -182,7 +198,7 @@ const transferSingleToken = async (tokenId) => {
 
 const transferAllTokens = async () => {
   try {
-    ensureConnected();
+    ensureSigner();
     const toAddress = elements.transferTo.value.trim();
     if (!toAddress) {
       logMessage(elements.transferLog, "กรุณากรอกที่อยู่ปลายทาง", "error");
@@ -221,5 +237,50 @@ elements.balanceButton.addEventListener("click", handleBalance);
 
 elements.tokensButton.addEventListener("click", handleTokens);
 
-
 elements.transferAllButton.addEventListener("click", transferAllTokens);
+
+const setupReadOnlyProfile = async (profileAddress) => {
+  const contractAddress = elements.contractAddress.value.trim();
+  if (!contractAddress) {
+    elements.walletStatus.textContent = "กรุณากรอก Contract Address";
+    return;
+  }
+
+  const provider = new ethers.providers.JsonRpcProvider(READONLY_RPC_URL);
+  const contract = new ethers.Contract(contractAddress, DEFAULT_ABI, provider);
+
+  state.provider = provider;
+  state.contract = contract;
+  state.wallet = null;
+  state.walletAddress = null;
+  state.profileAddress = profileAddress;
+
+  elements.walletStatus.textContent = `โหมดดูข้อมูลสำหรับ ${profileAddress}`;
+  elements.balanceAddress.value = profileAddress;
+  elements.ownerAddress.value = profileAddress;
+
+  await handleBalance();
+  await handleTokens();
+};
+
+const initProfileFromUrl = () => {
+  const profilePrefix = "/profile/";
+  const path = window.location.pathname;
+  if (!path.startsWith(profilePrefix)) {
+    return;
+  }
+
+  const rawAddress = decodeURIComponent(path.slice(profilePrefix.length).split("/")[0]);
+  if (!rawAddress) {
+    return;
+  }
+
+  if (!ethers.utils.isAddress(rawAddress)) {
+    elements.walletStatus.textContent = "รูปแบบ address ใน URL ไม่ถูกต้อง";
+    return;
+  }
+
+  setupReadOnlyProfile(rawAddress);
+};
+
+initProfileFromUrl();
