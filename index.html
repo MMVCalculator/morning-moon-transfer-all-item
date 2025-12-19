@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Morning Moon Transfer All Item</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <main class="container">
+      <header class="header">
+        <h1>Morning Moon Transfer All Item</h1>
+        <p>หน้าเว็บสำหรับใช้งานฟังก์ชั่น balanceOf, tokenOfOwnerAll และ transferFrom</p>
+      </header>
+
+      <section class="panel">
+        <h2>เชื่อมต่อ Wallet</h2>
+        <label class="field">
+          RPC URL
+          <input id="rpcUrl" type="text" value="https://rpc.bitkubchain.io" />
+        </label>
+        <label class="field">
+          Private Key
+          <input id="privateKey" type="password" placeholder="0x..." />
+        </label>
+        <label class="field">
+          Contract Address
+          <input id="contractAddress" type="text" value="0xd08Ac40b3a0A7fb20b026A3b6Cd5D7cFadc3d6f5" />
+        </label>
+        <button id="connectButton" class="primary">เชื่อมต่อ</button>
+        <p id="walletStatus" class="status"></p>
+      </section>
+
+      <section class="panel">
+        <h2>balanceOf</h2>
+        <label class="field">
+          ที่อยู่ Wallet
+          <input id="balanceAddress" type="text" placeholder="0x..." />
+        </label>
+        <button id="balanceButton">ตรวจสอบ Balance</button>
+        <p id="balanceResult" class="result"></p>
+      </section>
+
+      <section class="panel">
+        <h2>tokenOfOwnerAll</h2>
+        <label class="field">
+          ที่อยู่ Owner
+          <input id="ownerAddress" type="text" placeholder="0x..." />
+        </label>
+        <button id="tokensButton">ดึงรายการ Token</button>
+        <div id="tokensResult" class="result"></div>
+      </section>
+
+      <section class="panel">
+        <h2>transferFrom</h2>
+        <label class="field">
+          ส่งไปยัง Address
+          <input id="transferTo" type="text" placeholder="0x..." />
+        </label>
+        <div class="transfer-actions">
+          <button id="transferAllButton" class="danger">โอนทั้งหมด</button>
+        </div>
+        <div id="transferLog" class="result"></div>
+      </section>
+    </main>
+  </body>
+</html>
