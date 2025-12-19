@@ -131,8 +131,10 @@ const connectInjectedWallet = async (walletType) => {
     elements.walletStatus.textContent = `เชื่อมต่อสำเร็จ: ${walletAddress}`;
     elements.balanceAddress.value = walletAddress;
     elements.ownerAddress.value = walletAddress;
+    return true;
   } catch (error) {
     elements.walletStatus.textContent = error.message;
+    return false;
   }
 };
 
@@ -203,8 +205,16 @@ elements.connectMetamask.addEventListener("click", async () => {
 });
 
 elements.connectBitkub.addEventListener("click", async () => {
-  elements.walletStatus.textContent = "กำลังพาไปยัง Bitkub Next...";
-  window.location.href = BITKUB_NEXT_LOGIN_URL;
+  const injectedProvider = getInjectedProvider("bitkub");
+  if (!injectedProvider) {
+    elements.walletStatus.textContent = "กำลังพาไปยัง Bitkub Next...";
+    window.location.href = BITKUB_NEXT_LOGIN_URL;
+    return;
+  }
+  const connected = await connectInjectedWallet("bitkub");
+  if (connected) {
+    await handleTokens();
+  }
 });
 
 elements.balanceButton.addEventListener("click", handleBalance);
