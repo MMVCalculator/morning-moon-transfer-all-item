@@ -1,0 +1,22 @@
+{
+  "name": "morning-moon-transfer-all-item",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/korakrit-c/morning-moon-transfer-all-item.git"
+  },
+  "author": "korakrit-c",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/korakrit-c/morning-moon-transfer-all-item/issues"
+  },
+  "homepage": "https://github.com/korakrit-c/morning-moon-transfer-all-item#readme",
+  "dependencies": {
+    "ethers": "^5.5.1"
+  }
+}
